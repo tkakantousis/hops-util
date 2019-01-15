@@ -24,9 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Constants {
 
-  public static final String HOPSWORKS_REST_APPSERVICE = "appservice";
-  public static final String HOPSWORKS_REST_APPSERVICE_FEATURESTORE_RESOURCE = "featurestore";
-  public static final String HOPSWORKS_REST_APPSERVICE_FEATURESTORES_RESOURCE = "featurestores";
+  public static final String HOPSWORKS_REST_FEATURESTORE_RESOURCE = "featurestore";
   public static final String HOPSWORKS_REST_APPSERVICE_CLEAR_FEATUREGROUP_RESOURCE = "featurestore/featuregroup/clear";
   public static final String HOPSWORKS_REST_APPSERVICE_CREATE_FEATUREGROUP_RESOURCE = "featurestore/featuregroups";
   public static final String HOPSWORKS_REST_APPSERVICE_UPDATE_FEATUREGROUP_RESOURCE = "featurestore/featuregroup";
@@ -39,6 +37,7 @@ public class Constants {
   public static final String CRYPTO_MATERIAL_PASSWORD = "material_passwd";
   public static final String K_CERTIFICATE_ENV_VAR = "k_certificate";
   public static final String DOMAIN_CA_TRUSTSTORE = "domain_ca_truststore";
+  public static final String JWT_FILENAME = "token.jwt";
   //System properties set by Hopsworks
   public static final String KAFKA_FLINK_PARAMS = "kafka_params";//used by hops-examples-flink
   public static final String HOPSWORKS_REST_RESOURCE = "hopsworks-api/api";
