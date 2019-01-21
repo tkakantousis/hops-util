@@ -24,13 +24,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class Constants {
 
-  public static final String HOPSWORKS_REST_FEATURESTORE_RESOURCE = "featurestore";
-  public static final String HOPSWORKS_REST_APPSERVICE_CLEAR_FEATUREGROUP_RESOURCE = "featurestore/featuregroup/clear";
-  public static final String HOPSWORKS_REST_APPSERVICE_CREATE_FEATUREGROUP_RESOURCE = "featurestore/featuregroups";
-  public static final String HOPSWORKS_REST_APPSERVICE_UPDATE_FEATUREGROUP_RESOURCE = "featurestore/featuregroup";
-  public static final String HOPSWORKS_REST_APPSERVICE_CREATE_TRAINING_DATASET_RESOURCE =
+  public static final String HOPSWORKS_REST_FEATURESTORE_RESOURCE = "featurestores/featurestore";
+  public static final String HOPSWORKS_REST_FEATURESTORES_RESOURCE = "featurestores";
+  public static final String HOPSWORKS_REST_CLEAR_FEATUREGROUP_RESOURCE = "featurestore/featuregroup/clear";
+  public static final String HOPSWORKS_REST_CREATE_FEATUREGROUP_RESOURCE = "featurestore/featuregroups";
+  public static final String HOPSWORKS_REST_UPDATE_FEATUREGROUP_RESOURCE = "featurestore/featuregroup";
+  public static final String HOPSWORKS_REST_CREATE_TRAINING_DATASET_RESOURCE =
       "featurestore/trainingdatasets";
-  public static final String HOPSWORKS_REST_APPSERVICE_UPDATE_TRAINING_DATASET_RESOURCE =
+  public static final String HOPSWORKS_REST_UPDATE_TRAINING_DATASET_RESOURCE =
       "featurestore/trainingdataset";
 
   public static final String PROJECTID_ENV_VAR = "hopsworks.projectid";
@@ -42,6 +43,7 @@ public class Constants {
   public static final String KAFKA_FLINK_PARAMS = "kafka_params";//used by hops-examples-flink
   public static final String HOPSWORKS_REST_RESOURCE = "hopsworks-api/api";
   public static final long WAIT_JOBS_INTERVAL = 5;
+  public static final TimeUnit WAIT_JOBS_INTERVAL_TIMEUNIT = TimeUnit.SECONDS;
   public static final long WAIT_JOBS_TIMEOUT = 7;
   public static final TimeUnit WAIT_JOBS_TIMEOUT_TIMEUNIT = TimeUnit.DAYS;
 
@@ -60,7 +62,6 @@ public class Constants {
 
   //JSON properties sent to Hopsworks REST API
   public static final String JSON_JOBSTATE = "running";
-  public static final String JSON_JOBIDS = "jobIds";
   public static final String JSON_KEYSTOREPWD = "keyStorePwd";
   public static final String JSON_SCHEMA_CONTENTS = "contents";
   public static final String JSON_SCHEMA_TOPICNAME = "topicName";

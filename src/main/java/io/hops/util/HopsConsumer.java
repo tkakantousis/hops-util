@@ -14,7 +14,7 @@
 
 package io.hops.util;
 
-import io.hops.util.exceptions.CredentialsNotFoundException;
+import io.hops.util.exceptions.JWTNotFoundException;
 import io.hops.util.exceptions.SchemaNotFoundException;
 import com.twitter.bijection.Injection;
 import com.twitter.bijection.avro.GenericAvroCodecs;
@@ -44,7 +44,7 @@ public class HopsConsumer extends HopsProcess implements Runnable {
   private final boolean callback = false;
   private final StringBuilder consumed = new StringBuilder();
 
-  HopsConsumer(String topic) throws SchemaNotFoundException, CredentialsNotFoundException {
+  HopsConsumer(String topic) throws SchemaNotFoundException, JWTNotFoundException {
     super(HopsProcessType.CONSUMER, topic);
   }
 

@@ -14,11 +14,10 @@
 
 package io.hops.util;
 
-import io.hops.util.exceptions.CredentialsNotFoundException;
+import io.hops.util.exceptions.JWTNotFoundException;
 import io.hops.util.exceptions.SchemaNotFoundException;
 import com.twitter.bijection.Injection;
 import com.twitter.bijection.avro.GenericAvroCodecs;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.avro.Schema;
@@ -52,7 +51,7 @@ public class AvroDeserializer implements DeserializationSchema<String>,
   public AvroDeserializer(String topicName) {
     try {
       schemaJson = Hops.getSchema(topicName);
-    } catch (SchemaNotFoundException | CredentialsNotFoundException ex) {
+    } catch (SchemaNotFoundException | JWTNotFoundException ex) {
       Logger.getLogger(AvroDeserializer.class.getName()).log(Level.SEVERE, null,
           ex);
     }
@@ -62,10 +61,9 @@ public class AvroDeserializer implements DeserializationSchema<String>,
    *
    * @param message The message, as a byte array.
    * @return The deserialized message as a String object.
-   * @throws IOException IOException
    */
   @Override
-  public String deserialize(byte[] message) throws IOException {
+  public String deserialize(byte[] message) {
     if (!initialized) {
       parser = new Schema.Parser();
       schema = parser.parse(schemaJson);

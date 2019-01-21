@@ -14,7 +14,7 @@
 
 package io.hops.util;
 
-import io.hops.util.exceptions.CredentialsNotFoundException;
+import io.hops.util.exceptions.JWTNotFoundException;
 import io.hops.util.exceptions.SchemaNotFoundException;
 import com.twitter.bijection.Injection;
 import com.twitter.bijection.avro.GenericAvroCodecs;
@@ -49,9 +49,9 @@ public class HopsProducer extends HopsProcess {
    * @param topic Kafka topic.
    * @param userProps User-provided properties.
    * @throws SchemaNotFoundException When Avro schema for topic could not be found in HopsWorks.
-   * @throws io.hops.util.exceptions.CredentialsNotFoundException CredentialsNotFoundException
+   * @throws io.hops.util.exceptions.JWTNotFoundException JWTNotFoundException
    */
-  public HopsProducer(String topic, Properties userProps) throws SchemaNotFoundException, CredentialsNotFoundException {
+  public HopsProducer(String topic, Properties userProps) throws SchemaNotFoundException, JWTNotFoundException {
     super(HopsProcessType.PRODUCER, topic);
     Properties props = Hops.getKafkaProperties().defaultProps();
     props.put(ProducerConfig.CLIENT_ID_CONFIG, "HopsProducer");

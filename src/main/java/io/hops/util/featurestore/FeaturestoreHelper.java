@@ -1477,7 +1477,7 @@ public class FeaturestoreHelper {
   /**
    * Gets the TFRecords schema in JSON format for a spark dataframe
    *
-   * @param sparkDf
+   * @param sparkDf sparkdf
    * @return the TFRecords schema as a JSONObject
    */
   public static JSONObject getDataframeTfRecordSchemaJson(Dataset<Row> sparkDf) {

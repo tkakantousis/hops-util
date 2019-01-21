@@ -14,10 +14,8 @@
 
 package io.hops.util;
 
-import com.google.common.io.ByteStreams;
 import com.twitter.bijection.Injection;
 import com.twitter.bijection.avro.GenericAvroCodecs;
-import io.hops.util.exceptions.JWTNotFoundException;
 import io.hops.util.exceptions.DataframeIsEmpty;
 import io.hops.util.exceptions.FeaturegroupCreationError;
 import io.hops.util.exceptions.FeaturegroupDeletionError;
@@ -45,7 +43,6 @@ import io.hops.util.spark.SparkConsumer;
 import io.hops.util.spark.SparkProducer;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.commons.net.util.Base64;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 import org.apache.flink.streaming.util.serialization.SerializationSchema;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -550,10 +547,12 @@ public class Hops {
    *
    * @return schemas as com.twitter.bijection.Injection
    */
-  public static Map<String, Injection<GenericRecord, byte[]>> getRecordInjections()
-    throws SchemaNotFoundException, JWTNotFoundException {
-    Map<String, Schema> schemas = Hops.getSchemas();
-    if (schemas == null || schemas.isEmpty()) {
+  public static Map<String, Injection<GenericRecord, byte[]>> getRecordInjections() {
+    Map<String, Schema> schemas = null;
+    try {
+      schemas = Hops.getSchemas();
+    } catch (SchemaNotFoundException | JWTNotFoundException e) {
+      LOG.log(Level.SEVERE, e.getMessage(), e);
       return null;
     }
     Map<String, Injection<GenericRecord, byte[]>> recordInjections
@@ -574,15 +573,14 @@ public class Hops {
    * @throws SchemaNotFoundException      SchemaNotFoundException
    * @throws JWTNotFoundException JWTNotFoundException
    */
-  public static String getSchema(String topic) throws
-      JWTNotFoundException, SchemaNotFoundException {
+  public static String getSchema(String topic) throws JWTNotFoundException, SchemaNotFoundException {
     LOG.log(Level.FINE, "Getting schema for topic:{0} from uri:{1}", new String[]{topic});
 
     JSONObject json = new JSONObject();
     json.append("topicName", topic);
     Response response = null;
     try {
-      response = clientWrapper(json, "kafka/" + topic + "/schema", HttpMethod.GET);
+      response = clientWrapper(json, "/project/" + projectId + "/kafka/" + topic + "/schema", HttpMethod.GET);
     } catch (HTTPSClientInitializationException e) {
       throw new SchemaNotFoundException(e.getMessage());
     }
@@ -595,7 +593,11 @@ public class Hops {
     json = new JSONObject(responseEntity);
     return json.getString("contents");
   }
-
+  
+  protected static Response clientWrapper(String path, String httpMethod) throws HTTPSClientInitializationException,
+    JWTNotFoundException {
+    return clientWrapper(null, path, httpMethod);
+  }
   protected static Response clientWrapper(JSONObject json, String path, String httpMethod) throws
     HTTPSClientInitializationException, JWTNotFoundException {
     
@@ -605,27 +607,29 @@ public class Hops {
     } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
       throw new HTTPSClientInitializationException("Could not retrieve credentials from local working directory", e);
     }
-    WebTarget webTarget =
-      client.target(Hops.getRestEndpoint() + "/").path(Constants.HOPSWORKS_REST_RESOURCE + "/" + path);
+    WebTarget webTarget = client.target(Hops.getRestEndpoint() + "/").path(Constants.HOPSWORKS_REST_RESOURCE + path);
     LOG.info("webTarget.getUri().getHost():" + webTarget.getUri().getHost());
     LOG.info("webTarget.getUri().getPort():" + webTarget.getUri().getPort());
     LOG.info("webTarget.getUri().getPath():" + webTarget.getUri().getPath());
     
     //Read jwt and set it in header
-    String jwt;
-    try {
-      jwt = new String(Files.readAllBytes(Paths.get(Constants.JWT_FILENAME)));
-    } catch (IOException e) {
-      throw new JWTNotFoundException("Could not retrieve jwt from current working directory", e);
-    }
-  
+    String jwt = getJwt();
     Invocation.Builder invocationBuilder =
       webTarget.request().header("Bearer " , jwt).accept(MediaType.APPLICATION_JSON);
+  
     switch (httpMethod) {
       case HttpMethod.PUT:
+        if (json != null) {
           return invocationBuilder.put(Entity.entity(json.toString(), MediaType.APPLICATION_JSON));
+        } else {
+          throw new IllegalArgumentException("Json(entity) is null");
+        }
       case HttpMethod.POST:
+        if (json != null) {
           return invocationBuilder.post(Entity.entity(json.toString(), MediaType.APPLICATION_JSON));
+        } else {
+          throw new IllegalArgumentException("Json(entity) is null");
+        }
       case HttpMethod.GET:
         return invocationBuilder.get();
       default:
@@ -652,6 +656,14 @@ public class Hops {
       LOG.log(Level.SEVERE, null, ex);
     }
     return null;
+  }
+  
+  private static synchronized String getJwt() throws JWTNotFoundException {
+    try {
+      return new String(Files.readAllBytes(Paths.get(Constants.JWT_FILENAME)));
+    } catch (IOException e) {
+      throw new JWTNotFoundException("Could not retrieve jwt from current working directory", e);
+    }
   }
 
   /////////////////////////////////////////////
@@ -950,34 +962,27 @@ public class Hops {
    * @throws JAXBException JAXBException
    */
   private static FeaturegroupsAndTrainingDatasetsDTO getFeaturestoreMetadataRest(String featurestore)
-      throws JWTNotFoundException, FeaturestoreNotFound, JAXBException {
+    throws FeaturestoreNotFound, JAXBException {
     LOG.log(Level.FINE, "Getting featuregroups for featurestore " + featurestore);
-    FeaturegroupsAndTrainingDatasetsDTO featuregroupsAndTrainingDatasetsDTO = new FeaturegroupsAndTrainingDatasetsDTO();
-    
-    //Get feature store id from name
   
-    List<FeaturestoreDTO> featurestoreDTOS;
     JSONObject json = new JSONObject();
     json.append(Constants.JSON_FEATURESTORE_NAME, featurestore);
     Response response;
     try {
-      response =
-        clientWrapper(json, Constants.HOPSWORKS_REST_FEATURESTORE_RESOURCE + "/" + featurestore + "/trainingdatasets",
-          HttpMethod.GET);
-    } catch (HTTPSClientInitializationException e) {
+      response = clientWrapper(json,
+        "/project/" + projectId + "/featurestores/" + Constants.HOPSWORKS_REST_FEATURESTORE_RESOURCE,
+        HttpMethod.POST);
+    } catch (HTTPSClientInitializationException | JWTNotFoundException e) {
       throw new FeaturestoreNotFound(e.getMessage());
     }
-    
-    TrainingDatasetDTO trainingDatasetDTOs =
-      FeaturestoreHelper.parseTrainingDatasetJson(new JSONObject(response.readEntity(String.class)));
     LOG.log(Level.INFO, "******* response.getStatusInfo():" + response.getStatusInfo());
     if (response.getStatusInfo().getStatusCode() != Response.Status.OK.getStatusCode()) {
       throw new FeaturestoreNotFound("Could not fetch featuregroups for featurestore:" + featurestore);
     }
     final String responseEntity = response.readEntity(String.class);
-
+  
     JSONObject featurestoreMetadata = new JSONObject(responseEntity);
-    return featuregroupsAndTrainingDatasetsDTO;
+    return FeaturestoreHelper.parseFeaturestoreMetadataJson(featurestoreMetadata);
   }
 
   /**
@@ -1001,7 +1006,8 @@ public class Hops {
     json.append(Constants.JSON_FEATUREGROUP_NAME, featuregroup);
     json.append(Constants.JSON_FEATUREGROUP_VERSION, featuregroupVersion);
     try {
-      Response response = clientWrapper(json, Constants.HOPSWORKS_REST_APPSERVICE_CLEAR_FEATUREGROUP_RESOURCE,
+      Response response = clientWrapper(json,
+        "/project/" + projectId + "/featurestores/" +  Constants.HOPSWORKS_REST_CLEAR_FEATUREGROUP_RESOURCE,
           HttpMethod.POST);
       LOG.log(Level.INFO, "******* response.getStatusInfo():" + response.getStatusInfo());
       if (response.getStatusInfo().getStatusCode() != Response.Status.OK.getStatusCode()) {
@@ -1054,7 +1060,9 @@ public class Hops {
     json.put(Constants.JSON_FEATUREGROUP_UPDATE_STATS, false);
     Response response;
     try {
-      response = clientWrapper(json, Constants.HOPSWORKS_REST_APPSERVICE_CREATE_FEATUREGROUP_RESOURCE, HttpMethod.POST);
+      response = clientWrapper(json,
+        "/project/" + projectId + "/featurestores/" + Constants.HOPSWORKS_REST_CREATE_FEATUREGROUP_RESOURCE,
+        HttpMethod.POST);
     } catch (HTTPSClientInitializationException e) {
       throw new FeaturegroupCreationError(e.getMessage());
     }
@@ -1111,7 +1119,8 @@ public class Hops {
     Response response;
     try {
       response = clientWrapper(json,
-          Constants.HOPSWORKS_REST_APPSERVICE_CREATE_TRAINING_DATASET_RESOURCE, HttpMethod.POST);
+        "/project/" + projectId + "/featurestores/" + Constants.HOPSWORKS_REST_CREATE_TRAINING_DATASET_RESOURCE,
+        HttpMethod.POST);
     } catch (HTTPSClientInitializationException e) {
       throw new TrainingDatasetCreationError(e.getMessage());
     }
@@ -1161,7 +1170,9 @@ public class Hops {
     JSONObject json = new JSONObject();
     Response response = null;
     try {
-      response = clientWrapper(json, Constants.HOPSWORKS_REST_APPSERVICE_FEATURESTORES_RESOURCE, HttpMethod.POST);
+      response = clientWrapper(json,
+        "/project/" + projectId + "/featurestores/" + Constants.HOPSWORKS_REST_FEATURESTORES_RESOURCE,
+        HttpMethod.POST);
     } catch (HTTPSClientInitializationException e) {
       throw new FeaturestoresNotFound(e.getMessage());
     }
@@ -1171,7 +1182,7 @@ public class Hops {
     }
     final String responseEntity = response.readEntity(String.class);
     JSONArray featurestoresJson = new JSONArray(responseEntity);
-    List<String> featurestores = new ArrayList();
+    List<String> featurestores = new ArrayList<>();
     for (int i = 0; i < featurestoresJson.length(); i++) {
       JSONObject featurestoreJson = featurestoresJson.getJSONObject(i);
       String featurestoreName = featurestoreJson.getString(Constants.JSON_FEATURESTORE_NAME);
@@ -1762,7 +1773,9 @@ public class Hops {
     json.put(Constants.JSON_FEATUREGROUP_UPDATE_STATS, true);
     Response response = null;
     try {
-      response = clientWrapper(json, Constants.HOPSWORKS_REST_APPSERVICE_UPDATE_FEATUREGROUP_RESOURCE, HttpMethod.PUT);
+      response = clientWrapper(json,
+        "/project/" + projectId + "/featurestores/" + Constants.HOPSWORKS_REST_UPDATE_FEATUREGROUP_RESOURCE,
+        HttpMethod.PUT);
     } catch (HTTPSClientInitializationException e) {
       throw new FeaturegroupUpdateStatsError(e.getMessage());
     }
@@ -1808,8 +1821,9 @@ public class Hops {
     json.put(Constants.JSON_FEATUREGROUP_UPDATE_STATS, true);
     Response response = null;
     try {
-      response = clientWrapper(json, Constants.HOPSWORKS_REST_APPSERVICE_UPDATE_TRAINING_DATASET_RESOURCE,
-          HttpMethod.PUT);
+      response = clientWrapper(json,
+        "/project/" + projectId + "/featurestores/" + Constants.HOPSWORKS_REST_UPDATE_TRAINING_DATASET_RESOURCE,
+        HttpMethod.PUT);
     } catch (HTTPSClientInitializationException e) {
       throw new FeaturegroupUpdateStatsError(e.getMessage());
     }
