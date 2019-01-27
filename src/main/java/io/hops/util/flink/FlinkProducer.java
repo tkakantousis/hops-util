@@ -15,7 +15,8 @@
 package io.hops.util.flink;
 
 import java.util.Properties;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
+
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchemaWrapper;
 import org.apache.flink.streaming.util.serialization.SerializationSchema;
 
@@ -23,7 +24,7 @@ import org.apache.flink.streaming.util.serialization.SerializationSchema;
  * Wrapper class for FlinkKafkaProducer.
  * 
  */
-public class FlinkProducer extends FlinkKafkaProducer09 {
+public class FlinkProducer extends FlinkKafkaProducer011 {
 
   public FlinkProducer(String topic,
           SerializationSchema serializationSchema,

@@ -15,14 +15,15 @@
 package io.hops.util.flink;
 
 import java.util.Properties;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09;
+
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 
 /**
  *
  * Hops Wrapper for FlinkKafkaConsumer.
  */
-public class FlinkConsumer extends FlinkKafkaConsumer09 {
+public class FlinkConsumer extends FlinkKafkaConsumer011 {
 
   public FlinkConsumer(String topic, DeserializationSchema schema,
           Properties props) {
