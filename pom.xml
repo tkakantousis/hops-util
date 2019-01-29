@@ -26,6 +26,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <spark.version>2.3.2</spark.version>
     <flink.version>1.7.1</flink.version>
+    <flink.scala>2.12</flink.scala>
   </properties>
   
   <dependencies>
@@ -241,6 +242,28 @@
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
+      <artifactId>flink-table_${flink.scala}</artifactId>
+      <version>${flink.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.flink</groupId>
+          <artifactId>flink-shaded-hadoop2</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-streaming-scala_${flink.scala}</artifactId>
+      <version>${flink.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.flink</groupId>
+          <artifactId>flink-shaded-hadoop2</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
       <artifactId>flink-streaming-java_2.11</artifactId>
       <version>${flink.version}</version>
       <exclusions>
@@ -321,7 +344,7 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>`
+    <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>org.eclipse.persistence.moxy</artifactId>
       <version>2.5.2</version>
